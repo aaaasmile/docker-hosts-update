@@ -213,9 +213,10 @@ const (
 	itemCommentKey TokenType = iota
 	itemComment
 	itemText
-	itemIP
 	itemName
 	itemIPPart
+	itemDotKey
+	itemSpaceSepa
 	itemError
 	itemEOF
 )
@@ -223,9 +224,9 @@ const (
 func lexStateName(l *L) StateFunc {
 	for {
 		switch r := l.next(); {
-		case unicode.IsLetter(r), unicode.IsDigit(r):
+		case unicode.IsLetter(r), unicode.IsDigit(r), r == '.':
 			// nothing to do
-		case r == '\n' || r == '\r':
+		case unicode.IsSpace(r):
 			l.rewind()
 			if l.position > l.start {
 				l.emit(itemName)
@@ -248,7 +249,7 @@ func lexStateBeforeName(l *L) StateFunc {
 		switch r := l.next(); {
 		case unicode.IsLetter(r), unicode.IsDigit(r):
 			l.rewind()
-			l.emit(itemText)
+			l.emit(itemSpaceSepa)
 			return lexStateName
 		case r == '\n' || r == '\r':
 			l.rewind()
@@ -276,7 +277,7 @@ func lexStateIpD(l *L) StateFunc {
 			return lexStateInit
 		case unicode.IsSpace(r):
 			l.rewind()
-			l.emit(itemIP)
+			l.emit(itemIPPart)
 			l.position++
 			return lexStateBeforeName
 		case r == EOFRune:
@@ -306,7 +307,8 @@ func lexStateIpABC(l *L) StateFunc {
 				return l.errorf("Error: %v", err)
 			}
 			l.emit(keyInfoState.TokenType)
-			l.position++
+			l.next()
+			l.emit(itemDotKey)
 			if len(l.stackPropInfo) == 0 {
 				return lexStateIpD
 			}

@@ -11,16 +11,17 @@ func _() {
 	_ = x[itemCommentKey-0]
 	_ = x[itemComment-1]
 	_ = x[itemText-2]
-	_ = x[itemIP-3]
-	_ = x[itemName-4]
-	_ = x[itemIPPart-5]
-	_ = x[itemError-6]
-	_ = x[itemEOF-7]
+	_ = x[itemName-3]
+	_ = x[itemIPPart-4]
+	_ = x[itemDotKey-5]
+	_ = x[itemSpaceSepa-6]
+	_ = x[itemError-7]
+	_ = x[itemEOF-8]
 }
 
-const _TokenType_name = "itemCommentKeyitemCommentitemTextitemIPitemNameitemIPPartitemErroritemEOF"
+const _TokenType_name = "itemCommentKeyitemCommentitemTextitemNameitemIPPartitemDotKeyitemSpaceSepaitemErroritemEOF"
 
-var _TokenType_index = [...]uint8{0, 14, 25, 33, 39, 47, 57, 66, 73}
+var _TokenType_index = [...]uint8{0, 14, 25, 33, 41, 51, 61, 74, 83, 90}
 
 func (i TokenType) String() string {
 	if i < 0 || i >= TokenType(len(_TokenType_index)-1) {
