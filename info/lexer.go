@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -210,16 +211,147 @@ const (
 // for String(), use in this dir:  stringer.exe -type TokenType
 const (
 	itemCommentKey TokenType = iota
+	itemComment
 	itemText
 	itemIP
 	itemName
+	itemIPPart
 	itemError
 	itemEOF
 )
 
+func lexStateName(l *L) StateFunc {
+	for {
+		switch r := l.next(); {
+		case unicode.IsLetter(r), unicode.IsDigit(r):
+			// nothing to do
+		case r == '\n' || r == '\r':
+			l.rewind()
+			if l.position > l.start {
+				l.emit(itemName)
+				return lexStateInit
+			}
+		case r == EOFRune:
+			if l.position > l.start {
+				l.emit(itemName)
+			}
+			return nil
+		default:
+			l.emit(itemText)
+			return lexStateInit
+		}
+	}
+}
+
+func lexStateBeforeName(l *L) StateFunc {
+	for {
+		switch r := l.next(); {
+		case unicode.IsLetter(r), unicode.IsDigit(r):
+			l.rewind()
+			l.emit(itemText)
+			return lexStateName
+		case r == '\n' || r == '\r':
+			l.rewind()
+			l.emit(itemText)
+			return lexStateInit
+		case r == EOFRune:
+			l.emit(itemText)
+			return nil
+		}
+	}
+}
+
+func lexStateIpD(l *L) StateFunc {
+	dcount := 0
+	for {
+		switch r := l.next(); {
+		case unicode.IsDigit(r):
+			dcount++
+			if dcount > 3 {
+				return l.errorf("IP block D is too big")
+			}
+		case r == '\n' || r == '\r':
+			l.rewind()
+			l.emit(itemText)
+			return lexStateInit
+		case unicode.IsSpace(r):
+			l.rewind()
+			l.emit(itemIP)
+			l.position++
+			return lexStateBeforeName
+		case r == EOFRune:
+			l.emit(itemText)
+			return nil
+		default:
+			l.emit(itemText)
+			return l.errorf("Expect digit or dot")
+		}
+	}
+}
+
+func lexStateIpABC(l *L) StateFunc {
+	dcount := 0
+	for {
+		switch r := l.next(); {
+		case unicode.IsDigit(r):
+			dcount++
+			if dcount > 3 {
+				return l.errorf("IP block is too big")
+			}
+		case r == '.':
+			dcount = 0
+			l.rewind()
+			keyInfoState, err := l.popPropInfo()
+			if err != nil {
+				return l.errorf("Error: %v", err)
+			}
+			l.emit(keyInfoState.TokenType)
+			l.position++
+			if len(l.stackPropInfo) == 0 {
+				return lexStateIpD
+			}
+		case r == '\n' || r == '\r':
+			l.rewind()
+			l.emit(itemText)
+			return lexStateInit
+		case r == EOFRune:
+			l.emit(itemText)
+			return nil
+		default:
+			l.emit(itemText)
+			return l.errorf("Expect digit or dot")
+		}
+	}
+}
+
+func lexStateInComment(l *L) StateFunc {
+	l.position++
+	l.emit(itemCommentKey)
+	for {
+		switch r := l.next(); {
+		case r == '\n' || r == '\r':
+			l.rewind()
+			l.emit(itemComment)
+			return lexStateInit
+		case r == EOFRune:
+			l.emit(itemText)
+			return nil
+		}
+	}
+}
+
 func lexStateInit(l *L) StateFunc {
 	for {
 		switch r := l.next(); {
+		case unicode.IsDigit(r):
+			l.rewind()
+			l.emit(itemText)
+			l.stackPropInfo = append(l.stackPropInfo, PropInfo{TokenType: itemIPPart}, PropInfo{TokenType: itemIPPart}, PropInfo{TokenType: itemIPPart})
+			return lexStateIpABC
+		case r == '#':
+			l.rewind()
+			l.emit(itemText)
+			return lexStateInComment
 		case r == EOFRune:
 			l.emit(itemText)
 			return nil
@@ -230,6 +362,7 @@ func lexStateInit(l *L) StateFunc {
 ///////////////////////////////////////////////////////////////////////
 type HostsParser struct {
 	ChangedSource string
+	HasChanges    bool
 	DebugParser   bool
 }
 
@@ -242,12 +375,13 @@ func (hp *HostsParser) ParseHosts(source string) error {
 			fmt.Println("*** type: ", item.Type.String(), item.String())
 		}
 		switch item.Type {
-		case itemText:
-			hp.ChangedSource += item.Value
 		case itemError:
 			return errors.New(item.Value)
 		case itemEOF:
 			return nil
+		default:
+			hp.ChangedSource += item.Value
+
 		}
 	}
 }

@@ -18,15 +18,21 @@ func UpdateHostsFile(ipInfo map[string]string) error {
 		return err
 	}
 
-	hp := HostsParser{}
+	hp := HostsParser{
+		DebugParser: true,
+	}
 	if err := hp.ParseHosts(string(raw)); err != nil {
 		return err
 	}
-	outfile := path.Join(`d:\tmp\nav`, hostsBaseFn)
-	if err := ioutil.WriteFile(outfile, []byte(hp.ChangedSource), 0644); err != nil {
-		return err
+	if hp.HasChanges {
+		outfile := path.Join(`d:\tmp\nav`, hostsBaseFn)
+		if err := ioutil.WriteFile(outfile, []byte(hp.ChangedSource), 0644); err != nil {
+			return err
+		}
+		log.Println("Hosts file updated")
+	} else {
+		log.Println("No need to change the Hosts file")
 	}
-	log.Println("Hosts file updated")
 	return nil
 }
 
