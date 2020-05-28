@@ -13,24 +13,25 @@ func main() {
 		log.Fatal("Windows only")
 	}
 
-	mm, err := getContainerList()
+	mmName, err := getContainerList()
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Recognized container: ", mm)
+	log.Println("Recognized container: ", mmName)
 
-	ip1, err := getIpDockerContainerIP("a266530d48f4")
-	if err != nil {
-		log.Fatal(err)
+	mmIp := make(map[string]string)
+	for _, name := range mmName {
+		ip, err := getIpDockerContainerIP(name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		mmIp[name] = ip
 	}
-	ip2, err := getIpDockerContainerIP("21c9649b5768")
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Now check if the Hosts file need to be updated with ", ip1, ip2)
+
+	log.Println("Now check if the Hosts file need to be updated with ", mmIp)
 }
 
-func getContainerList() (map[string]string, error) {
+func getContainerList() ([]string, error) {
 	var cmd string
 	var args []string
 
@@ -43,14 +44,23 @@ func getContainerList() (map[string]string, error) {
 		return nil, err
 	}
 
-	log.Println("ls -q: ", out)
+	//fmt.Println("*** ls -q: ", out)
 	list := string(out)
 	log.Println("List ", list)
 
-	res := make(map[string]string, 0)
+	res := make([]string, 0)
 	arr := strings.Split(list, "\n")
-	for _, item := range arr {
-		res[item] = ""
+	for _, contHash := range arr {
+		if len(contHash) > 0 {
+			args = []string{"inspect", "--format", "'{{ .Name }}'", contHash}
+			log.Println("Inspect container ", args)
+			out, err := exec.Command(cmd, args...).Output()
+			if err != nil {
+				log.Printf("Error on executing docker: %v", err)
+				return nil, err
+			}
+			res = append(res, strings.Trim(string(out), "/'\n"))
+		}
 	}
 	return res, nil
 }
