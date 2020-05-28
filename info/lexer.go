@@ -217,9 +217,25 @@ const (
 	itemIPPart
 	itemDotKey
 	itemSpaceSepa
+	itemTrail
 	itemError
 	itemEOF
 )
+
+func lexStateAfterName(l *L) StateFunc {
+	for {
+		switch r := l.next(); {
+		case r == '\n':
+			l.emit(itemTrail)
+			return lexStateInit
+		case r == EOFRune:
+			l.emit(itemTrail)
+			return nil
+		default:
+			l.ignore()
+		}
+	}
+}
 
 func lexStateName(l *L) StateFunc {
 	for {
@@ -230,12 +246,11 @@ func lexStateName(l *L) StateFunc {
 			l.rewind()
 			if l.position > l.start {
 				l.emit(itemName)
-				return lexStateInit
+				return lexStateAfterName
 			}
+			return lexStateInit
 		case r == EOFRune:
-			if l.position > l.start {
-				l.emit(itemName)
-			}
+			l.emit(itemName)
 			return nil
 		default:
 			l.emit(itemText)
