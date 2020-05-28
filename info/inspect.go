@@ -1,14 +1,32 @@
 package info
 
 import (
+	"io/ioutil"
 	"log"
 	"os/exec"
+	"path"
 	"strings"
 )
 
 func UpdateHostsFile(ipInfo map[string]string) error {
 	log.Println("Now check if the Hosts file needs to be updated with ", ipInfo)
+	hostsPath := `c:\windows\system32\drivers\etc`
+	hostsBaseFn := "hosts"
+	hostsFn := path.Join(hostsPath, hostsBaseFn)
+	raw, err := ioutil.ReadFile(hostsFn)
+	if err != nil {
+		return err
+	}
 
+	hp := HostsParser{}
+	if err := hp.ParseHosts(string(raw)); err != nil {
+		return err
+	}
+	outfile := path.Join(`d:\tmp\nav`, hostsBaseFn)
+	if err := ioutil.WriteFile(outfile, []byte(hp.ChangedSource), 0644); err != nil {
+		return err
+	}
+	log.Println("Hosts file updated")
 	return nil
 }
 
