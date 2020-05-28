@@ -17,6 +17,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Println("Now check if the Hosts file needs to be updated with ", mmIP)
+	err = info.UpdateHostsFile(mmIP)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Hosts update finished")
 }

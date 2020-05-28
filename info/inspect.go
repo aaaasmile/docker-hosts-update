@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+func UpdateHostsFile(ipInfo map[string]string) error {
+	log.Println("Now check if the Hosts file needs to be updated with ", ipInfo)
+
+	return nil
+}
+
 func CollectContainerHostinfo() (map[string]string, error) {
 	mmName, err := getContainerList()
 	if err != nil {
