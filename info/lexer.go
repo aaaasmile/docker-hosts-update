@@ -381,10 +381,13 @@ type HostsParser struct {
 	ChangedSource string
 	HasChanges    bool
 	DebugParser   bool
+	MapIp         map[string]string
 }
 
 func (hp *HostsParser) ParseHosts(source string) error {
 	ll := NewL(source, lexStateInit)
+	hostIP := ""
+	currSpace := ""
 	defer close(ll.tokens)
 	for {
 		item := ll.nextItem()
@@ -392,11 +395,29 @@ func (hp *HostsParser) ParseHosts(source string) error {
 			fmt.Println("*** type: ", item.Type.String(), item.String())
 		}
 		switch item.Type {
+		case itemIPPart:
+			hostIP += item.Value
+		case itemDotKey:
+			hostIP += item.Value
+		case itemSpaceSepa:
+			currSpace = item.Value
+		case itemName:
+			currName := item.Value
+			if changedIP, ok := hp.MapIp[currName]; ok {
+				if changedIP != hostIP {
+					hp.HasChanges = true
+					hp.ChangedSource += fmt.Sprintf("%s          %s\n", changedIP, currName)
+				}
+			} else {
+				hp.ChangedSource += fmt.Sprintf("%s%s%s\n", hostIP, currSpace, currName)
+			}
+		case itemTrail:
 		case itemError:
 			return errors.New(item.Value)
 		case itemEOF:
 			return nil
 		default:
+			hostIP = ""
 			hp.ChangedSource += item.Value
 
 		}

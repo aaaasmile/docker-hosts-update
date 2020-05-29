@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func UpdateHostsFile(ipInfo map[string]string) error {
+func UpdateHostsFile(ipInfo map[string]string, debug, testOut bool) error {
 	log.Println("Now check if the Hosts file needs to be updated with ", ipInfo)
 	hostsPath := `c:\windows\system32\drivers\etc`
 	hostsBaseFn := "hosts"
@@ -19,17 +19,22 @@ func UpdateHostsFile(ipInfo map[string]string) error {
 	}
 
 	hp := HostsParser{
-		DebugParser: true,
+		DebugParser: debug,
+		MapIp:       ipInfo,
 	}
 	if err := hp.ParseHosts(string(raw)); err != nil {
 		return err
 	}
 	if hp.HasChanges {
-		outfile := path.Join(`d:\tmp\nav`, hostsBaseFn)
+		outfile := hostsFn
+		if testOut {
+			outfile = path.Join(`d:\tmp\nav`, hostsBaseFn)
+		}
+
 		if err := ioutil.WriteFile(outfile, []byte(hp.ChangedSource), 0644); err != nil {
 			return err
 		}
-		log.Println("Hosts file updated")
+		log.Println("Hosts file updated ", outfile)
 	} else {
 		log.Println("No need to change the Hosts file")
 	}
@@ -69,7 +74,7 @@ func getContainerList() ([]string, error) {
 
 	//fmt.Println("*** ls -q: ", out)
 	list := string(out)
-	log.Println("List ", list)
+	//log.Println("List ", list)
 
 	res := make([]string, 0)
 	arr := strings.Split(list, "\n")
