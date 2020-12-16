@@ -1,0 +1,34 @@
+== docker-hosts-update
+Quest piccola applicazione tenta di aggiornare il file hosts di windows per
+cercare di aggiornare l'indirizzo IP di un container. 
+
+Prerequisito
+ che il service docker sia in funzione.
+
+== Uso
+Lanciare 
+docker-hosts-update.exe 
+senza parametri dopo aver fatto partire il container
+al quale l'indirizzo ip serve.
+
+== Info
+La mia installazione di docker ha diversi container che comunicano tra di loro 
+usando l'indirizzo IP. Per esempio il container DB sql17 e il container NAV.
+
+Un indirizzo fisso IP al container sql17 in windows 10 non ha, fino ad ora dic 2020,
+mai funzionato in modo stabile usando l'opzione --network=tlan. 
+Ad ogni update il container non era più raggiungibile in qunto tlan spariva. Il risultato è che 
+tutti i containers andavano ricreati.
+
+Questo programma usa internamente dei comandi docker per trovare gli indirizzi dei
+container quando partono. Essi usano un dhcp, quindi ottengono un nuovo Ip ad ogni start.
+Con docker -ps e docker inspect si riesce a leggere l'IP da mettere nel file Hosts.
+Il lexer poi esegue l'update degli ip configurati.
+Quindi nome del container deve avere un match nel file hosts, altrimenti non viene cambiato.
+
+== TODO
+- Attenzione che il flag -test fa un redirect dell'output su un file fisso. Qui si può fare meglio,
+mettendo il nome del file come parametro e cambiandogli il nome.
+Come output si potrebbe scrivere quali ip ha cambiato.
+
+ 
