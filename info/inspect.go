@@ -8,39 +8,6 @@ import (
 	"strings"
 )
 
-func UpdateHostsFile(ipInfo map[string]string, debug, testOut bool) error {
-	log.Println("Now check if the Hosts file needs to be updated with ", ipInfo)
-	hostsPath := `c:\windows\system32\drivers\etc`
-	hostsBaseFn := "hosts"
-	hostsFn := path.Join(hostsPath, hostsBaseFn)
-	raw, err := ioutil.ReadFile(hostsFn)
-	if err != nil {
-		return err
-	}
-
-	hp := HostsParser{
-		DebugParser: debug,
-		MapIp:       ipInfo,
-	}
-	if err := hp.ParseHosts(string(raw)); err != nil {
-		return err
-	}
-	if hp.HasChanges {
-		outfile := hostsFn
-		if testOut {
-			outfile = path.Join(`d:\tmp\nav`, hostsBaseFn)
-		}
-
-		if err := ioutil.WriteFile(outfile, []byte(hp.ChangedSource), 0644); err != nil {
-			return err
-		}
-		log.Println("Hosts file updated ", outfile)
-	} else {
-		log.Println("No need to change the Hosts file")
-	}
-	return nil
-}
-
 func CollectContainerHostinfo() (map[string]string, error) {
 	mmName, err := getContainerList()
 	if err != nil {
@@ -57,6 +24,35 @@ func CollectContainerHostinfo() (map[string]string, error) {
 		mmIP[name] = ip
 	}
 	return mmIP, nil
+}
+
+func UpdateHostsFile(ipInfo map[string]string, debug bool, dirout string) error {
+	log.Println("Now check if the Hosts file needs to be updated with ", ipInfo)
+	hostsBaseFn := "hosts"
+	hostsFn := path.Join(dirout, hostsBaseFn)
+	raw, err := ioutil.ReadFile(hostsFn)
+	if err != nil {
+		return err
+	}
+
+	hp := HostsParser{
+		DebugParser: debug,
+		MapIp:       ipInfo,
+	}
+	if err := hp.ParseHosts(string(raw)); err != nil {
+		return err
+	}
+	if hp.HasChanges {
+		outfile := hostsFn
+
+		if err := ioutil.WriteFile(outfile, []byte(hp.ChangedSource), 0644); err != nil {
+			return err
+		}
+		log.Println("Hosts file updated ", outfile)
+	} else {
+		log.Println("No need to change the Hosts file")
+	}
+	return nil
 }
 
 func getContainerList() ([]string, error) {
@@ -107,7 +103,7 @@ func getIpDockerContainerIP(contName string) (string, error) {
 		return "", err
 	}
 	ipstr := strings.Trim(string(out), "'\n")
-	log.Println("IP is ", ipstr)
+	log.Println("Container IP is ", contName, ipstr)
 
 	return ipstr, nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"runtime"
 
@@ -10,7 +11,7 @@ import (
 
 func main() {
 	log.Println("Welcome to the Hosts updater")
-	var test = flag.Bool("test", false, "Test the Hosts output inside a temp file")
+	var dirout = flag.String("dirout", `c:\windows\system32\drivers\etc`, "Test the Hosts output inside a temp file")
 	var debug = flag.Bool("debug", false, "Turn on debug information")
 	flag.Parse()
 
@@ -22,9 +23,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = info.UpdateHostsFile(mmIP, *debug, *test)
+	err = info.UpdateHostsFile(mmIP, *debug, *dirout)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Hosts update finished")
+	log.Println("Hosts update finished.\nPress any key to finish.")
+	fmt.Scanln()
+
 }

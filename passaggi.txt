@@ -10,6 +10,7 @@ Lanciare
 docker-hosts-update.exe 
 senza parametri dopo aver fatto partire il container
 al quale l'indirizzo ip serve.
+NOTA: solo gli ip senza commento (considerati attivi) vengono aggiornati 
 
 == Info
 La mia installazione di docker ha diversi container che comunicano tra di loro 
