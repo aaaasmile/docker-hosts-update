@@ -36,8 +36,9 @@ func UpdateHostsFile(ipInfo map[string]string, debug bool, dirout string) error 
 	}
 
 	hp := HostsParser{
-		DebugParser: debug,
-		MapIp:       ipInfo,
+		DebugParser:  debug,
+		MapIp:        ipInfo,
+		UpdatedHosts: make([]string, 0),
 	}
 	if err := hp.ParseHosts(string(raw)); err != nil {
 		return err
@@ -48,6 +49,7 @@ func UpdateHostsFile(ipInfo map[string]string, debug bool, dirout string) error 
 		if err := ioutil.WriteFile(outfile, []byte(hp.ChangedSource), 0644); err != nil {
 			return err
 		}
+		log.Println("Updated ip on hosts ", hp.UpdatedHosts)
 		log.Println("Hosts file updated ", outfile)
 	} else {
 		log.Println("No need to change the Hosts file")

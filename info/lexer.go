@@ -382,6 +382,7 @@ type HostsParser struct {
 	HasChanges    bool
 	DebugParser   bool
 	MapIp         map[string]string
+	UpdatedHosts  []string
 }
 
 func (hp *HostsParser) ParseHosts(source string) error {
@@ -407,6 +408,7 @@ func (hp *HostsParser) ParseHosts(source string) error {
 				if changedIP != hostIP {
 					hp.HasChanges = true
 					hp.ChangedSource += fmt.Sprintf("%s          %s\n", changedIP, currName)
+					hp.UpdatedHosts = append(hp.UpdatedHosts, currName)
 				}
 			} else {
 				hp.ChangedSource += fmt.Sprintf("%s%s%s\n", hostIP, currSpace, currName)
