@@ -409,6 +409,8 @@ func (hp *HostsParser) ParseHosts(source string) error {
 					hp.HasChanges = true
 					hp.ChangedSource += fmt.Sprintf("%s          %s\n", changedIP, currName)
 					hp.UpdatedHosts = append(hp.UpdatedHosts, currName)
+				} else {
+					hp.ChangedSource += fmt.Sprintf("%s%s%s\n", hostIP, currSpace, currName)
 				}
 			} else {
 				hp.ChangedSource += fmt.Sprintf("%s%s%s\n", hostIP, currSpace, currName)
